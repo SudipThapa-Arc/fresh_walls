@@ -114,6 +114,21 @@ class _FullscreenState extends State<Fullscreen> {
     }
   }
 
+  Future<void> setwallpaper() async {
+    setState(() => _isLoading = true);
+    try {
+      int location = WallpaperManager.HOME_SCREEN;
+      final File file =
+          await DefaultCacheManager().getSingleFile(widget.imageurl);
+      final bool result =
+          await WallpaperManager.setWallpaperFromFile(file.path, location);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

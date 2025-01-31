@@ -10,6 +10,8 @@ import '../providers/wallpaper_provider.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/loading_indicator.dart';
 import '../widgets/wallpaper_grid.dart';
+import 'package:wallpaper_app/models/wallpaper_model.dart';
+import 'package:wallpaper_app/utils/refresh_controller.dart';
 
 class Wallpaperwid extends StatefulWidget {
   const Wallpaperwid({super.key});
@@ -19,79 +21,186 @@ class Wallpaperwid extends StatefulWidget {
 }
 
 class _WallpaperwidState extends State<Wallpaperwid> {
+  List<WallpaperModel> images = [];
+  int page = 1;
+  bool _isLoading = false;
+  bool _hasMore = true;
+  String? _error;
   final ScrollController _scrollController = ScrollController();
-  int _currentPage = 1;
+  final RefreshController _refreshController = RefreshController();
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_scrollListener);
-    _refreshWallpapers();
-  }
-
-  Future<void> _refreshWallpapers() async {
-    final provider = Provider.of<WallpaperProvider>(context, listen: false);
-    await provider.fetchWallpapers(page: 1);
-  }
-
-  void _scrollListener() {
-    if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
-      _loadMore();
-    }
-  }
-
-  Future<void> _loadMore() async {
-    final provider = Provider.of<WallpaperProvider>(context, listen: false);
-    if (!provider.state.isLoading) {
-      _currentPage++;
-      await provider.fetchWallpapers(page: _currentPage);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CustomAppBar(title: 'Fresh Walls'),
-      body: Consumer<WallpaperProvider>(
-        builder: (context, provider, _) {
-          if (provider.state.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Error: ${provider.state.error}',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      provider.clearError();
-                      _refreshWallpapers();
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return WallpaperGrid(
-            wallpapers: provider.state.wallpapers,
-            isLoading: provider.state.isLoading,
-            onLoadMore: _loadMore,
-            onRefresh: _refreshWallpapers,
-            scrollController: _scrollController,
-          );
-        },
-      ),
-    );
+    fetchapi();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _refreshController.dispose();
     super.dispose();
+  }
+
+  Future<void> _onRefresh() async {
+    setState(() {
+      page = 1;
+      images.clear();
+      _hasMore = true;
+      _error = null;
+    });
+    await fetchapi();
+    _refreshController.refreshCompleted();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      if (!_isLoading && _hasMore) {
+        loadmore();
+      }
+    }
+  }
+
+  Future<void> fetchapi() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await http.get(
+          Uri.parse('https://api.pexels.com/v1/curated?per_page=30&page=$page'),
+          headers: {'Authorization': ApiKeys.pexelsApiKey});
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        final List<WallpaperModel> newImages = (result['photos'] as List)
+            .map((photo) => WallpaperModel.fromJson(photo))
+            .toList();
+
+        setState(() {
+          if (page == 1) {
+            images = newImages;
+          } else {
+            images.addAll(newImages);
+          }
+          _hasMore = newImages.length == 30;
+          _isLoading = false;
+        });
+      } else {
+        throw 'Failed to load images: ${response.statusCode}';
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> loadmore() async {
+    if (!_hasMore || _isLoading) return;
+    page++;
+    await fetchapi();
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            _error ?? 'An error occurred',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.red),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => fetchapi(),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Wallpapers')),
+      body: _error != null && images.isEmpty
+          ? _buildErrorWidget()
+          : RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.75,
+                      mainAxisSpacing: 8.0,
+                      crossAxisSpacing: 8.0,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index >= images.length) {
+                          return _isLoading ? _buildLoadingIndicator() : null;
+                        }
+                        return _buildImageCard(images[index]);
+                      },
+                      childCount: images.length + (_hasMore ? 1 : 0),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildImageCard(WallpaperModel image) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                Fullscreen(imageurl: image.src['original'] ?? ''),
+          ),
+        ),
+        child: Hero(
+          tag: image.id.toString(),
+          child: CachedNetworkImage(
+            imageUrl: image.src['medium'] ?? '',
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              color: Colors.grey[300],
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: Colors.grey[300],
+              child: const Icon(Icons.error),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

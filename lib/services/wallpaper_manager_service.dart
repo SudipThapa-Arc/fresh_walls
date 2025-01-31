@@ -13,6 +13,10 @@ class WallpaperManagerService {
     required int wallpaperLocation,
     required Function(double) onProgress,
   }) async {
+    if (kIsWeb) {
+      throw UnsupportedError('Wallpaper setting is not supported on web');
+    }
+
     try {
       // Download and cache the image
       final file = await CustomCacheManager.instance.getSingleFile(

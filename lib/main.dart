@@ -11,19 +11,17 @@ import 'package:wallpaper_app/widgets/search_delegate.dart';
 import 'services/theme_service.dart';
 import 'services/connectivity_service.dart';
 import 'widgets/error_boundary.dart';
+import 'widgets/page_transitions.dart';
+import 'pages/search_page.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env");
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeService()),
         ChangeNotifierProvider(create: (_) => WallpaperProvider()),
-        ChangeNotifierProvider(create: (_) => ConnectivityService()),
       ],
-      child: ErrorBoundary(
-        child: const MyApp(),
-      ),
+      child: const MyApp(),
     ),
   );
 }
@@ -74,6 +72,16 @@ class _MainScreenState extends State<MainScreen> {
     FavoritesPage(),
   ];
 
+  void _navigateToSearch() {
+    Navigator.push(
+      context,
+      FadePageRoute(
+        child: const SearchPage(),
+        routeName: '/search',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,14 +109,13 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showSearch(
-            context: context,
-            delegate: WallpaperSearchDelegate(),
-          );
-        },
-        child: const Icon(Icons.search),
+      floatingActionButton: AnimatedScale(
+        scale: _currentIndex == 1 ? 0.0 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: FloatingActionButton(
+          onPressed: _navigateToSearch,
+          child: const Icon(Icons.search),
+        ),
       ),
     );
   }
