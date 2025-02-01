@@ -18,10 +18,16 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Fresh Walls - A Beautiful Wallpaper App">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+  <meta http-equiv="Cross-Origin-Resource-Policy" content="cross-origin">
+  <meta name="referrer" content="no-referrer">
 
   <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="fresh_walls">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
@@ -29,15 +35,28 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>fresh_walls</title>
+  <title>Fresh Walls</title>
   <link rel="manifest" href="manifest.json">
+  <script>
+    // Fix for Firefox
+    if (typeof WebAssembly === 'undefined') {
+      document.write(
+        '<script src="https://unpkg.com/@webassemblyjs/wasm-parser@1.9.0/lib/index.js"><\/script>'
+      );
+    }
+  </script>
 </head>
 <body>
+  <script>
+    var serviceWorkerVersion = null;
+  </script>
   <script src="flutter_bootstrap.js" async></script>
   <script>
-    window.ENV = {
-        PEXELS_API_KEY: '%PEXELS_API_KEY%'
-    };
+    window.addEventListener('load', function() {
+      if (serviceWorkerVersion) {
+        window._flutter_webworker = new Worker('flutter_service_worker.js?v=' + serviceWorkerVersion);
+      }
+    });
   </script>
 </body>
 </html>

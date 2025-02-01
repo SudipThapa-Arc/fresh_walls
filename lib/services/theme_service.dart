@@ -39,7 +39,12 @@ class ThemeService extends ChangeNotifier {
     }
   }
 
-  ThemeData get theme => _isDarkMode ? _darkTheme : _lightTheme;
+  ThemeData get theme => ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.light,
+        colorSchemeSeed: Colors.blue,
+        textTheme: GoogleFonts.poppinsTextTheme(),
+      );
 
   static final _lightTheme = ThemeData(
     useMaterial3: true,

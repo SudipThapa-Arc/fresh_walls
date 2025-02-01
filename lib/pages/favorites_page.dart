@@ -5,6 +5,8 @@ import '../widgets/custom_app_bar.dart';
 import 'fullscreen.dart';
 
 class FavoritesPage extends StatelessWidget {
+  const FavoritesPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -5,10 +5,10 @@ class ColorFilterWidget extends StatelessWidget {
   final Color? selectedColor;
 
   const ColorFilterWidget({
-    Key? key,
+    super.key,
     required this.onColorSelected,
     this.selectedColor,
-  }) : super(key: key);
+  });
 
   final List<ColorOption> colors = const [
     ColorOption(color: Colors.red, name: 'Red'),

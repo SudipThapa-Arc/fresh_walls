@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/wallpaper_provider.dart';
 import '../pages/fullscreen.dart';
+import '../services/image_cache_service.dart';
+import '../services/image_loading_service.dart';
 
 class WallpaperGrid extends StatelessWidget {
   final List<Map<String, dynamic>> wallpapers;
@@ -13,16 +15,26 @@ class WallpaperGrid extends StatelessWidget {
   final ScrollController? scrollController;
 
   const WallpaperGrid({
-    Key? key,
+    super.key,
     required this.wallpapers,
     this.isLoading = false,
     this.onLoadMore,
     this.onRefresh,
     this.scrollController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (wallpapers.isEmpty && isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (wallpapers.isEmpty && !isLoading) {
+      return const Center(
+        child: Text('No wallpapers found'),
+      );
+    }
+
     return Consumer<SettingsProvider>(
       builder: (context, settings, _) {
         final crossAxisCount = _getCrossAxisCount(context, settings.gridLayout);
@@ -44,6 +56,13 @@ class WallpaperGrid extends StatelessWidget {
                 return const _LoadingTile();
               }
               return const SizedBox.shrink();
+            }
+
+            // Preload next 5 images
+            if (index + 5 < wallpapers.length) {
+              ImageCacheService.preloadImage(
+                wallpapers[index + 5]['src']['large2x'],
+              );
             }
 
             return _WallpaperTile(
@@ -94,10 +113,10 @@ class _WallpaperTile extends StatefulWidget {
   final String layout;
 
   const _WallpaperTile({
-    Key? key,
+    super.key,
     required this.wallpaper,
     required this.layout,
-  }) : super(key: key);
+  });
 
   @override
   State<_WallpaperTile> createState() => _WallpaperTileState();
@@ -167,19 +186,9 @@ class _WallpaperTileState extends State<_WallpaperTile>
                 children: [
                   Hero(
                     tag: widget.wallpaper['src']['large2x'],
-                    child: CachedNetworkImage(
-                      imageUrl: widget.wallpaper['src']['large2x'],
+                    child: ImageLoadingService.buildImage(
+                      url: widget.wallpaper['src']['large2x'],
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey[300],
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.error),
-                      ),
                     ),
                   ),
                   if (_isHovered) ...[
@@ -227,7 +236,7 @@ class _WallpaperTileState extends State<_WallpaperTile>
 }
 
 class _LoadingTile extends StatelessWidget {
-  const _LoadingTile({Key? key}) : super(key: key);
+  const _LoadingTile({super.key});
 
   @override
   Widget build(BuildContext context) {

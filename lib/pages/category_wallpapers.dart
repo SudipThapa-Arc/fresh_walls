@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/categories_service.dart';
 import 'fullscreen.dart';
+import '../services/image_loading_service.dart';
 
 class CategoryWallpapers extends StatefulWidget {
   final String category;
   final Color color;
 
   const CategoryWallpapers({
-    Key? key,
+    super.key,
     required this.category,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   State<CategoryWallpapers> createState() => _CategoryWallpapersState();
@@ -32,6 +33,8 @@ class _CategoryWallpapersState extends State<CategoryWallpapers> {
   }
 
   void _scrollListener() {
+    if (!mounted) return;
+
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
       _loadMore();
@@ -39,7 +42,7 @@ class _CategoryWallpapersState extends State<CategoryWallpapers> {
   }
 
   Future<void> _loadWallpapers() async {
-    if (_isLoading) return;
+    if (_isLoading || !mounted) return;
 
     setState(() => _isLoading = true);
     try {
@@ -47,16 +50,23 @@ class _CategoryWallpapersState extends State<CategoryWallpapers> {
         widget.category,
         page: _currentPage,
       );
-      setState(() {
-        _wallpapers = wallpapers;
-        _isLoading = false;
-        _hasMore = wallpapers.length == 80;
-      });
+      if (mounted) {
+        setState(() {
+          _wallpapers = wallpapers;
+          _isLoading = false;
+          _hasMore = wallpapers.length == 80;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading wallpapers: $e')),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading wallpapers: $e'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -140,36 +150,9 @@ class _CategoryWallpapersState extends State<CategoryWallpapers> {
                   ),
                   child: Hero(
                     tag: wallpaper['src']['large2x'],
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          wallpaper['src']['large2x'],
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                    child: ImageLoadingService.buildImage(
+                      url: wallpaper['src']['large2x'],
+                      fit: BoxFit.cover,
                     ),
                   ),
                 );
@@ -180,7 +163,25 @@ class _CategoryWallpapersState extends State<CategoryWallpapers> {
 
   @override
   void dispose() {
+    // Cancel any pending operations
+    for (var wallpaper in _wallpapers) {
+      final imageProvider = NetworkImage(wallpaper['src']['large2x']);
+      imageProvider.evict();
+    }
+    _wallpapers.clear();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Precache images for better performance
+    for (var wallpaper in _wallpapers) {
+      precacheImage(
+        NetworkImage(wallpaper['src']['large2x']),
+        context,
+      );
+    }
   }
 }

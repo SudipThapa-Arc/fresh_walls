@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/material.dart';
 
 class ConnectivityService extends ChangeNotifier {
   bool _hasConnection = true;
@@ -27,6 +28,11 @@ class ConnectivityService extends ChangeNotifier {
 
   void _updateConnectionStatus(ConnectivityResult result) {
     _hasConnection = result != ConnectivityResult.none;
+    notifyListeners();
+  }
+
+  void updateConnectionStatus(bool status) {
+    _hasConnection = status;
     notifyListeners();
   }
 }

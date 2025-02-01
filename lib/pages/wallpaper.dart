@@ -2,16 +2,12 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:google_fonts/google_fonts.dart';
 import 'package:wallpaper_app/pages/fullscreen.dart';
 import 'package:wallpaper_app/config/api_keys.dart';
-import 'package:provider/provider.dart';
-import '../providers/wallpaper_provider.dart';
-import '../widgets/custom_app_bar.dart';
-import '../widgets/loading_indicator.dart';
-import '../widgets/wallpaper_grid.dart';
 import 'package:wallpaper_app/models/wallpaper_model.dart';
 import 'package:wallpaper_app/utils/refresh_controller.dart';
+import '../utils/web_middleware.dart';
+import '../services/image_loading_service.dart';
 
 class Wallpaperwid extends StatefulWidget {
   const Wallpaperwid({super.key});
@@ -73,32 +69,39 @@ class _WallpaperwidState extends State<Wallpaperwid> {
 
     try {
       final response = await http.get(
-          Uri.parse('https://api.pexels.com/v1/curated?per_page=30&page=$page'),
-          headers: {'Authorization': ApiKeys.pexelsApiKey});
+        Uri.parse('https://api.pexels.com/v1/curated?per_page=30&page=$page'),
+        headers: {
+          'Authorization': ApiKeys.pexelsApiKey,
+        },
+      );
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        final List<WallpaperModel> newImages = (result['photos'] as List)
-            .map((photo) => WallpaperModel.fromJson(photo))
-            .toList();
-
         setState(() {
           if (page == 1) {
-            images = newImages;
+            images = (result['photos'] as List)
+                .map((photo) => WallpaperModel.fromJson(photo))
+                .toList();
           } else {
-            images.addAll(newImages);
+            images.addAll((result['photos'] as List)
+                .map((photo) => WallpaperModel.fromJson(photo))
+                .toList());
           }
-          _hasMore = newImages.length == 30;
+          _hasMore = images.length == 30;
           _isLoading = false;
         });
       } else {
         throw 'Failed to load images: ${response.statusCode}';
       }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 

@@ -6,10 +6,10 @@ class SearchFilterSheet extends StatefulWidget {
   final Function(SearchFilters) onApply;
 
   const SearchFilterSheet({
-    Key? key,
+    super.key,
     required this.initialFilters,
     required this.onApply,
-  }) : super(key: key);
+  });
 
   @override
   State<SearchFilterSheet> createState() => _SearchFilterSheetState();

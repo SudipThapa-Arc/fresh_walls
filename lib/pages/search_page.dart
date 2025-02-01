@@ -10,7 +10,7 @@ import '../models/search_filters.dart';
 import '../widgets/search_filter_sheet.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({Key? key}) : super(key: key);
+  const SearchPage({super.key});
 
   @override
   State<SearchPage> createState() => _SearchPageState();

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/cache_manager.dart';
 
 class OfflinePage extends StatelessWidget {
-  const OfflinePage({Key? key}) : super(key: key);
+  const OfflinePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -11,32 +10,16 @@ class OfflinePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.cloud_off,
-              size: 64,
-              color: Colors.grey,
-            ),
-            const SizedBox(height: 16),
+            Icon(Icons.wifi_off, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
             Text(
               'No Internet Connection',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
-              'Check your connection and try again',
+              'Please check your connection and try again',
               style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                // Try to load cached content
-                final cachedWallpapers = await CustomCacheManager.instance
-                    .getFileFromCache('cached_wallpapers');
-                if (cachedWallpapers != null) {
-                  // Handle cached content
-                }
-              },
-              child: const Text('Load Offline Content'),
             ),
           ],
         ),

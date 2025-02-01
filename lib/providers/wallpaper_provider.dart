@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config/api_keys.dart';
+import '../services/image_cache_service.dart';
 
 class WallpaperState {
   final bool isLoading;
@@ -34,11 +35,30 @@ class WallpaperState {
 
 class WallpaperProvider with ChangeNotifier {
   WallpaperState _state = WallpaperState();
-  WallpaperState get state => _state;
+  bool _disposed = false;
 
   WallpaperProvider() {
     loadFavorites();
     fetchWallpapers();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _clearResources();
+    super.dispose();
+  }
+
+  void _clearResources() async {
+    await ImageCacheService.clearCache();
+    _state.wallpapers.clear();
+  }
+
+  @override
+  void notifyListeners() {
+    if (!_disposed) {
+      super.notifyListeners();
+    }
   }
 
   Future<void> fetchWallpapers({int page = 1}) async {

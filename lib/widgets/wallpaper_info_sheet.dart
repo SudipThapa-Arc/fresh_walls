@@ -4,8 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class WallpaperInfoSheet extends StatelessWidget {
   final Map<String, dynamic> wallpaperData;
 
-  const WallpaperInfoSheet({Key? key, required this.wallpaperData})
-      : super(key: key);
+  const WallpaperInfoSheet({super.key, required this.wallpaperData});
 
   @override
   Widget build(BuildContext context) {

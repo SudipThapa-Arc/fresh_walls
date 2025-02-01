@@ -67,6 +67,8 @@ class CategoriesPage extends StatelessWidget {
     // Add more categories...
   ];
 
+  CategoriesPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return GridView.builder(

@@ -8,10 +8,12 @@ import 'dart:html' as html;
 import '../services/web_download_service.dart';
 import '../services/wallpaper_manager_service.dart';
 import '../widgets/loading_indicator.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../config/api_keys.dart';
 
 class Fullscreen extends StatefulWidget {
   final String imageurl;
-  const Fullscreen({Key? key, required this.imageurl}) : super(key: key);
+  const Fullscreen({super.key, required this.imageurl});
 
   @override
   State<Fullscreen> createState() => _FullscreenState();
@@ -135,19 +137,26 @@ class _FullscreenState extends State<Fullscreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Image display with optimization
           Hero(
             tag: widget.imageurl,
             child: InteractiveViewer(
               minScale: 0.5,
               maxScale: 4.0,
-              child: Image.network(
-                widget.imageurl,
+              child: CachedNetworkImage(
+                imageUrl: widget.imageurl,
+                httpHeaders: {'Authorization': ApiKeys.pexelsApiKey},
                 fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: LoadingIndicator());
-                },
+                placeholder: (context, url) => const LoadingIndicator(),
+                errorWidget: (context, url, error) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red),
+                      const SizedBox(height: 8),
+                      Text('Error: $error'),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
 import '../services/image_optimization_service.dart';
 import '../services/cache_manager.dart';
-import 'dart:io';
 
 class WallpaperManagerService {
   static const String backgroundTaskKey = 'autoWallpaperChange';

@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'dart:typed_data';
 
 class ImageOptimizationService {
   static Future<File?> optimizeImage(File file) async {
