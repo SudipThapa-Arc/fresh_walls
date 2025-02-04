@@ -6,8 +6,9 @@ import 'package:wallpaper_app/pages/fullscreen.dart';
 import 'package:wallpaper_app/config/api_keys.dart';
 import 'package:wallpaper_app/models/wallpaper_model.dart';
 import 'package:wallpaper_app/utils/refresh_controller.dart';
-import '../utils/web_middleware.dart';
-import '../services/image_loading_service.dart';
+import 'package:wallpaper_app/services/image_loading_service.dart';
+import 'package:flutter/rendering.dart';
+import 'package:wallpaper_app/widgets/error_boundary.dart';
 
 class Wallpaperwid extends StatefulWidget {
   const Wallpaperwid({super.key});
@@ -72,6 +73,7 @@ class _WallpaperwidState extends State<Wallpaperwid> {
         Uri.parse('https://api.pexels.com/v1/curated?per_page=30&page=$page'),
         headers: {
           'Authorization': ApiKeys.pexelsApiKey,
+          'Cache-Control': 'max-age=3600',
         },
       );
 
@@ -79,19 +81,23 @@ class _WallpaperwidState extends State<Wallpaperwid> {
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
+        final newImages = (result['photos'] as List)
+            .map((photo) => WallpaperModel.fromJson(photo))
+            .toList();
+
         setState(() {
           if (page == 1) {
-            images = (result['photos'] as List)
-                .map((photo) => WallpaperModel.fromJson(photo))
-                .toList();
+            images = newImages;
           } else {
-            images.addAll((result['photos'] as List)
-                .map((photo) => WallpaperModel.fromJson(photo))
-                .toList());
+            images.addAll(newImages);
           }
-          _hasMore = images.length == 30;
+          _hasMore = newImages.length == 30;
           _isLoading = false;
         });
+
+        for (var image in newImages) {
+          precacheImage(NetworkImage(image.src['original'] ?? ''), context);
+        }
       } else {
         throw 'Failed to load images: ${response.statusCode}';
       }
@@ -142,67 +148,53 @@ class _WallpaperwidState extends State<Wallpaperwid> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Wallpapers')),
-      body: _error != null && images.isEmpty
-          ? _buildErrorWidget()
-          : RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      mainAxisSpacing: 8.0,
-                      crossAxisSpacing: 8.0,
+    return ErrorBoundary(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Wallpapers')),
+        body: _error != null && images.isEmpty
+            ? _buildErrorWidget()
+            : RefreshIndicator(
+                onRefresh: _onRefresh,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.6,
+                        mainAxisSpacing: 2.0,
+                        crossAxisSpacing: 2.0,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index >= images.length) {
+                            return _isLoading ? _buildLoadingIndicator() : null;
+                          }
+                          return GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Fullscreen(
+                                  imageurl: images[index].src['original'] ?? '',
+                                ),
+                              ),
+                            ),
+                            child: Hero(
+                              tag: images[index].src['original'] ?? '',
+                              child: ImageLoadingService.loadImage(
+                                imageUrl: images[index].src['original'] ?? '',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          );
+                        },
+                        childCount: images.length + (_hasMore ? 1 : 0),
+                      ),
                     ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index >= images.length) {
-                          return _isLoading ? _buildLoadingIndicator() : null;
-                        }
-                        return _buildImageCard(images[index]);
-                      },
-                      childCount: images.length + (_hasMore ? 1 : 0),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-    );
-  }
-
-  Widget _buildImageCard(WallpaperModel image) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                Fullscreen(imageurl: image.src['original'] ?? ''),
-          ),
-        ),
-        child: Hero(
-          tag: image.id.toString(),
-          child: CachedNetworkImage(
-            imageUrl: image.src['medium'] ?? '',
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: Colors.grey[300],
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: Colors.grey[300],
-              child: const Icon(Icons.error),
-            ),
-          ),
-        ),
       ),
     );
   }

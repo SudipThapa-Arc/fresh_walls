@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../services/search_service.dart';
 import '../widgets/wallpaper_grid.dart';
 import '../widgets/loading_indicator.dart';

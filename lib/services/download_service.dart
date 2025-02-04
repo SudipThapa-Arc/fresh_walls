@@ -4,6 +4,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 class DownloadService extends ChangeNotifier {
   bool _isDownloading = false;
@@ -58,8 +60,29 @@ class DownloadService extends ChangeNotifier {
   }
 
   Future<String?> _downloadForWeb(String url) async {
-    // Web download implementation
-    return url;
+    if (kIsWeb) {
+      try {
+        final response = await http.get(Uri.parse(url));
+        final blob = html.Blob([response.bodyBytes]);
+        final urlDownload = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement()
+          ..href = urlDownload
+          ..download = 'wallpaper.jpg'
+          ..style.display = 'none'
+          ..click();
+
+        html.document.body?.children.add(anchor);
+        await Future.delayed(const Duration(milliseconds: 100));
+        html.document.body?.children.remove(anchor);
+        html.Url.revokeObjectUrl(urlDownload);
+
+        return url;
+      } catch (e) {
+        _error = 'Failed to download: $e';
+        throw Exception(_error);
+      }
+    }
+    return null;
   }
 
   Future<File> getCachedFile(String url) async {
@@ -79,7 +102,7 @@ class DownloadService extends ChangeNotifier {
         subject: 'Fresh Walls Wallpaper',
       );
     } catch (e) {
-      print('Share error: $e');
+      debugPrint('Share error: $e');
     }
   }
 }

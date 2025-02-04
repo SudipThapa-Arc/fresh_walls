@@ -10,13 +10,13 @@ class OfflinePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.wifi_off, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
             Text(
               'No Internet Connection',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Please check your connection and try again',
               style: Theme.of(context).textTheme.bodyMedium,

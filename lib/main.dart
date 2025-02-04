@@ -12,28 +12,45 @@ import 'package:wallpaper_app/pages/categories_page.dart';
 import 'package:wallpaper_app/pages/favorites_page.dart';
 import 'widgets/page_transitions.dart';
 import 'pages/search_page.dart';
-import 'package:wallpaper_app/services/navigation_service.dart';
+// import 'package:wallpaper_app/services/navigation_service.dart';
 import 'package:wallpaper_app/services/image_cache_service.dart';
 import 'package:wallpaper_app/widgets/error_boundary.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+import 'package:wallpaper_app/services/web_cache_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (kIsWeb) {
+    setUrlStrategy(PathUrlStrategy());
+    await WebCacheConfig.init();
+    await _initializeWeb();
+  }
+
   await dotenv.load(fileName: ".env");
   ImageCacheService.initCache();
 
   runApp(
-    MaterialApp(
-      navigatorKey: NavigationService.navigatorKey,
-      home: MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => ThemeService()),
-          ChangeNotifierProvider(create: (_) => ConnectivityService()),
-          ChangeNotifierProvider(create: (_) => WallpaperProvider()),
-        ],
-        child: const MyApp(),
-      ),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeService()),
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
+        ChangeNotifierProvider(create: (_) => WallpaperProvider()),
+      ],
+      child: const MyApp(),
     ),
   );
+}
+
+Future<void> _initializeWeb() async {
+  try {
+    await html.window.navigator.serviceWorker?.register('service-worker.js');
+  } catch (e) {
+    debugPrint('Service worker registration failed: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -82,7 +99,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const Wallpaperwid(),
     CategoriesPage(),
-    FavoritesPage(),
+    const FavoritesPage(),
   ];
 
   void _navigateToSearch() {

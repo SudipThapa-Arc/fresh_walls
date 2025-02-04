@@ -35,8 +35,11 @@ class _CategoryWallpapersState extends State<CategoryWallpapers> {
   void _scrollListener() {
     if (!mounted) return;
 
-    if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
+    final threshold = 0.8; // Load more when 80% scrolled
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+
+    if (currentScroll >= maxScroll * threshold && !_isLoading && _hasMore) {
       _loadMore();
     }
   }
@@ -150,8 +153,8 @@ class _CategoryWallpapersState extends State<CategoryWallpapers> {
                   ),
                   child: Hero(
                     tag: wallpaper['src']['large2x'],
-                    child: ImageLoadingService.buildImage(
-                      url: wallpaper['src']['large2x'],
+                    child: ImageLoadingService.loadImage(
+                      imageUrl: wallpaper['src']['large2x'],
                       fit: BoxFit.cover,
                     ),
                   ),

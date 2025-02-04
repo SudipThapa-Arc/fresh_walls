@@ -113,7 +113,6 @@ class _WallpaperTile extends StatefulWidget {
   final String layout;
 
   const _WallpaperTile({
-    super.key,
     required this.wallpaper,
     required this.layout,
   });
@@ -186,8 +185,8 @@ class _WallpaperTileState extends State<_WallpaperTile>
                 children: [
                   Hero(
                     tag: widget.wallpaper['src']['large2x'],
-                    child: ImageLoadingService.buildImage(
-                      url: widget.wallpaper['src']['large2x'],
+                    child: ImageLoadingService.loadImage(
+                      imageUrl: widget.wallpaper['src']['large2x'],
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -236,7 +235,7 @@ class _WallpaperTileState extends State<_WallpaperTile>
 }
 
 class _LoadingTile extends StatelessWidget {
-  const _LoadingTile({super.key});
+  const _LoadingTile();
 
   @override
   Widget build(BuildContext context) {

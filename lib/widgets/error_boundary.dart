@@ -5,10 +5,10 @@ class ErrorBoundary extends StatefulWidget {
   final Widget Function(Object error)? errorBuilder;
 
   const ErrorBoundary({
-    Key? key,
+    super.key,
     required this.child,
     this.errorBuilder,
-  }) : super(key: key);
+  });
 
   @override
   ErrorBoundaryState createState() => ErrorBoundaryState();
