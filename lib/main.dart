@@ -19,7 +19,7 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
-import 'package:wallpaper_app/services/web_cache_config.dart';
+// import 'package:wallpaper_app/services/web_cache_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +43,10 @@ void main() async {
       child: const MyApp(),
     ),
   );
+}
+
+class WebCacheConfig {
+  static init() {}
 }
 
 Future<void> _initializeWeb() async {
